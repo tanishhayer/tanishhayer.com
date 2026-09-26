@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tanish Hayer</title>
+<meta name="description" content="Tanish Hayer — singer, songwriter, producer. New music coming soon.">
+<meta name="theme-color" content="#030303">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=JetBrains+Mono:wght@300;500&display=swap" rel="stylesheet">
+<style>
+  :root { --fg:#ecebe8; --dim:#6d6d6d; --bg:#030303; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { height:100%; background:var(--bg); color:var(--fg); overflow:hidden; }
+  body { font-family:'JetBrains Mono', monospace; cursor:none; -webkit-tap-highlight-color:transparent; user-select:none; }
+  @media (hover:none) { body { cursor:auto; } #cur { display:none; } }
+
+  canvas { position:fixed; inset:0; width:100%; height:100%; display:block; }
+
+  .grain { position:fixed; inset:-50%; pointer-events:none; opacity:.11; z-index:5;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    animation:grain .6s steps(5) infinite; }
+  @keyframes grain { 20%{transform:translate(-4%,3%)} 40%{transform:translate(3%,-2%)} 60%{transform:translate(-2%,-4%)} 80%{transform:translate(4%,2%)} }
+  .vignette { position:fixed; inset:0; pointer-events:none; z-index:4;
+    background:radial-gradient(ellipse at center, transparent 35%, rgba(0,0,0,.85) 100%); }
+  .scan { position:fixed; inset:0; pointer-events:none; z-index:6; opacity:.05;
+    background:repeating-linear-gradient(0deg, #fff 0 1px, transparent 1px 3px); }
+
+  main { position:fixed; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:3; pointer-events:none; padding:0 16px; text-align:center; }
+  h1 { font-family:'Syne', sans-serif; font-weight:800; text-transform:uppercase;
+    font-size:clamp(3.2rem, 14vw, 11.5rem); line-height:.86; letter-spacing:-.02em;
+    mix-blend-mode:difference; }
+  h1 .w { display:inline-block; white-space:nowrap; margin:0 .12em; }
+  h1 .l { display:inline-block; will-change:transform, filter; transition:color .3s; }
+  h1.glitch { animation:glitch .22s steps(2) 1; }
+  @keyframes glitch {
+    0%   { clip-path:inset(12% 0 58% 0); transform:translate(-14px,0) skewX(-8deg); }
+    25%  { clip-path:inset(62% 0 8% 0);  transform:translate(12px,0); }
+    50%  { clip-path:inset(30% 0 40% 0); transform:translate(-6px,0) skewX(10deg); }
+    75%  { clip-path:inset(0 0 80% 0);   transform:translate(8px,0); }
+    100% { clip-path:inset(0 0 0 0);     transform:none; }
+  }
+  .sub { margin-top:2.2rem; font-size:clamp(.62rem, 1.6vw, .8rem); letter-spacing:.55em; text-transform:uppercase; color:var(--dim); min-height:1.2em; }
+  .caret { animation:blink 1s steps(1) infinite; color:var(--fg); }
+  @keyframes blink { 50% { opacity:0; } }
+
+  .hud { position:fixed; z-index:7; font-size:10px; letter-spacing:.25em; text-transform:uppercase; color:var(--dim); line-height:1.9; pointer-events:none; }
+  .hud b { color:var(--fg); font-weight:500; }
+  .tl { top:20px; left:20px; } .tr { top:20px; right:20px; text-align:right; }
+  .bl { bottom:20px; left:20px; } .br { bottom:20px; right:20px; text-align:right; }
+  .rec { color:#ff2b2b; animation:blink 1.2s steps(1) infinite; }
+  #mute { pointer-events:auto; background:none; border:0; color:var(--fg); font:inherit; letter-spacing:inherit; text-transform:inherit; cursor:none; padding:0; }
+  @media (hover:none) { #mute { cursor:pointer; } }
+
+  #enter { position:fixed; z-index:8; left:50%; bottom:13vh; transform:translateX(-50%);
+    background:rgba(255,255,255,.03); color:var(--fg); border:1px solid rgba(255,255,255,.25);
+    font:500 11px 'JetBrains Mono', monospace; letter-spacing:.45em; text-transform:uppercase;
+    padding:16px 26px 16px 32px; cursor:none; backdrop-filter:blur(6px); transition:all .4s; white-space:nowrap; }
+  #enter:hover { background:var(--fg); color:#000; letter-spacing:.6em; }
+  #enter small { display:block; margin-top:6px; font-size:8px; letter-spacing:.4em; color:var(--dim); }
+  #enter:hover small { color:#444; }
+  #enter.gone { opacity:0; pointer-events:none; transform:translateX(-50%) scale(.9); }
+  @media (hover:none) { #enter { cursor:pointer; } }
+
+  #cur { position:fixed; z-index:9; left:0; top:0; width:34px; height:34px; margin:-17px 0 0 -17px;
+    border:1px solid rgba(255,255,255,.7); border-radius:50%; pointer-events:none; mix-blend-mode:difference;
+    transition:width .25s, height .25s, margin .25s, background .25s; }
+  #cur.hot { width:70px; height:70px; margin:-35px 0 0 -35px; background:#fff; }
+
+  @media (max-width:600px) { .hud { font-size:8px; } .tl,.tr { top:14px; } .bl,.br { bottom:14px; } .tl,.bl { left:14px; } .tr,.br { right:14px; } }
+</style>
+</head>
+<body>
+  <canvas id="c"></canvas>
+  <div class="vignette"></div>
+  <div class="grain"></div>
+  <div class="scan"></div>
+
+  <main>
+    <h1 id="name" aria-label="Tanish Hayer"></h1>
+    <p class="sub"><span id="type"></span><span class="caret">_</span></p>
+  </main>
+
+  <div class="hud tl">TH — <b>001</b><br>Singer · Songwriter · Producer</div>
+  <div class="hud tr"><span class="rec">●</span> <b>REC</b><br><span id="clock">00:00:00</span></div>
+  <div class="hud br"><button id="mute" aria-label="Toggle sound">Sound: <b id="snd">Off</b></button><br><span id="bpm">— BPM</span></div>
+
+  <button id="enter">▶ Enter the stage<small>sound on · then play your keyboard</small></button>
+  <div id="cur"></div>
+
+<script>
+(() => {
+  /* ---------- NAME: split into letters ---------- */
+  const h1 = document.getElementById('name');
+  const letters = [];
+  'TANISH HAYER'.split(' ').forEach(word => {
+    const w = document.createElement('span'); w.className = 'w';
+    [...word].forEach(ch => {
+      const l = document.createElement('span'); l.className = 'l'; l.textContent = ch;
+      l.setAttribute('aria-hidden', 'true'); w.appendChild(l); letters.push({ el:l, cx:0, cy:0 });
+    });
+    h1.appendChild(w);
+  });
+  const measure = () => letters.forEach(o => {
+    o.el.style.transform = '';
+    const r = o.el.getBoundingClientRect(); o.cx = r.left + r.width/2; o.cy = r.top + r.height/2;
+  });
+
+  /* ---------- TYPEWRITER ---------- */
+  const phrases = ['Coming soon', 'New music loading', 'Signal incoming'];
+  const tEl = document.getElementById('type'); let pi = 0, ci = 0, del = false;
+  (function type() {
+    const p = phrases[pi];
+    tEl.textContent = p.slice(0, ci);
+    if (!del && ci < p.length) ci++;
+    else if (!del) { del = true; return setTimeout(type, 2200); }
+    else if (ci > 0) ci--;
+    else { del = false; pi = (pi + 1) % phrases.length; }
+    setTimeout(type, del ? 35 : 85);
+  })();
+
+  /* ---------- CLOCK ---------- */
+  const t0 = Date.now(), clock = document.getElementById('clock');
+  setInterval(() => {
+    const s = Math.floor((Date.now() - t0) / 1000);
+    clock.textContent = [s/3600, (s/60)%60, s%60].map(n => String(Math.floor(n)).padStart(2,'0')).join(':');
+  }, 1000);
+
+  /* ---------- CANVAS STAGE ---------- */
+  const cv = document.getElementById('c'), x = cv.getContext('2d');
+  let W = 0, H = 0; const DPR = Math.min(window.devicePixelRatio || 1, 2);
+  const mouse = { x: innerWidth/2, y: innerHeight*0.6, sx: innerWidth/2, sy: innerHeight*0.6 };
+  const lights = [0.08, 0.27, 0.5, 0.73, 0.92].map((f, i) => ({ f, ph: i * 1.7, sp: 0.25 + i * 0.07, flash: 0 }));
+  let haze = [], dust = [];
+
+  function resize() {
+    W = innerWidth; H = innerHeight;
+    cv.width = W * DPR; cv.height = H * DPR; x.setTransform(DPR, 0, 0, DPR, 0, 0);
+    haze = Array.from({ length: 34 }, () => ({ x: Math.random()*W, y: Math.random()*H, r: 120 + Math.random()*260,
+      vx: (Math.random()-.5)*.25, vy: -.05 - Math.random()*.15, a: .018 + Math.random()*.03 }));
+    dust = Array.from({ length: Math.round(W*H/7000) }, () => ({ x: Math.random()*W, y: Math.random()*H,
+      vx: (Math.random()-.5)*.15, vy: (Math.random()-.5)*.15, s: Math.random()*1.6 + .3 }));
+    measure();
+  }
+  addEventListener('resize', resize);
+
+  function beam(ox, oy, ang, len, spread, a) {
+    x.save(); x.translate(ox, oy); x.rotate(ang);
+    const g = x.createLinearGradient(0, 0, 0, len);
+    g.addColorStop(0, `rgba(255,248,235,${a})`); g.addColorStop(.6, `rgba(255,248,235,${a*.25})`); g.addColorStop(1, 'rgba(255,248,235,0)');
+    x.fillStyle = g; x.beginPath(); x.moveTo(-5, 0); x.lineTo(5, 0); x.lineTo(len*spread, len); x.lineTo(-len*spread, len); x.closePath(); x.fill();
+    x.restore();
+    const s = x.createRadialGradient(ox, oy, 0, ox, oy, 60);
+    s.addColorStop(0, `rgba(255,255,255,${Math.min(1, a*6)})`); s.addColorStop(1, 'rgba(255,255,255,0)');
+    x.fillStyle = s; x.fillRect(ox-60, oy-60, 120, 120);
+  }
+
+  let energy = 0, last = performance.now();
+  function frame(now) {
+    const t = now / 1000, dt = Math.min(3, (now - last) / 16.67); last = now;
+    mouse.sx += (mouse.x - mouse.sx) * .08 * dt; mouse.sy += (mouse.y - mouse.sy) * .08 * dt;
+    energy *= Math.pow(.9, dt);
+
+    x.globalCompositeOperation = 'source-over';
+    x.fillStyle = '#030303'; x.fillRect(0, 0, W, H);
+    x.globalCompositeOperation = 'lighter';
+
+    // haze
+    for (const p of haze) {
+      p.x += p.vx*dt; p.y += p.vy*dt;
+      if (p.y < -p.r) { p.y = H + p.r; p.x = Math.random()*W; }
+      if (p.x < -p.r) p.x = W + p.r; if (p.x > W + p.r) p.x = -p.r;
+      const g = x.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r);
+      const a = p.a * (1 + energy*1.5);
+      g.addColorStop(0, `rgba(190,190,200,${a})`); g.addColorStop(1, 'rgba(190,190,200,0)');
+      x.fillStyle = g; x.fillRect(p.x-p.r, p.y-p.r, p.r*2, p.r*2);
+    }
+
+    // stage lights (asymmetric truss)
+    const len = Math.hypot(W, H) * 1.1;
+    lights.forEach((L, i) => {
+      L.flash *= Math.pow(.9, dt);
+      const ox = L.f * W, oy = -10 - (i % 2) * 18;
+      let ang = Math.sin(t*L.sp + L.ph) * .42;
+      if (i === 2) ang = Math.atan2(-(mouse.sx - ox), mouse.sy - oy);           // follow spotlight
+      const a = .05 + energy*.12 + L.flash*.35 + (i === 2 ? .05 : 0);
+      beam(ox, oy, ang, len, .09 + L.flash*.05, a);
+    });
+
+    // cursor pool of light
+    const R = Math.min(W, H) * .42;
+    const sg = x.createRadialGradient(mouse.sx, mouse.sy, 0, mouse.sx, mouse.sy, R);
+    sg.addColorStop(0, `rgba(255,250,240,${.1 + energy*.08})`); sg.addColorStop(1, 'rgba(255,250,240,0)');
+    x.fillStyle = sg; x.fillRect(0, 0, W, H);
+
+    // dust catching the light
+    for (const d of dust) {
+      d.x += (d.vx + Math.sin(t + d.y*.01)*.05)*dt; d.y += d.vy*dt;
+      if (d.x < 0) d.x = W; if (d.x > W) d.x = 0; if (d.y < 0) d.y = H; if (d.y > H) d.y = 0;
+      const dist = Math.hypot(d.x - mouse.sx, d.y - mouse.sy);
+      const a = .08 + Math.max(0, 1 - dist/R) * .8 + energy*.2;
+      x.fillStyle = `rgba(255,255,255,${a})`; x.fillRect(d.x, d.y, d.s, d.s);
+    }
+
+    // waveform
+    x.globalCompositeOperation = 'source-over';
+    if (analyser) {
+      analyser.getByteTimeDomainData(wave);
+      x.beginPath(); const base = H * .86, amp = H * .09;
+      for (let i = 0; i < wave.length; i++) {
+        const px = i / (wave.length - 1) * W, py = base + (wave[i] - 128) / 128 * amp;
+        i ? x.lineTo(px, py) : x.moveTo(px, py);
+      }
+      x.strokeStyle = `rgba(255,255,255,${.25 + energy*.4})`; x.lineWidth = 1; x.stroke();
+    }
+
+    // magnetic / shattering letters
+    const e = energy;
+    for (const o of letters) {
+      const dx = o.cx - mouse.x, dy = o.cy - mouse.y, d = Math.hypot(dx, dy) || 1, RR = 190;
+      let tx = 0, ty = 0, rot = 0, blur = 0;
+      if (d < RR) { const f = Math.pow(1 - d/RR, 2) * 70; tx = dx/d*f; ty = dy/d*f; rot = dx/d*f*.25; blur = f/14; }
+      tx += (Math.random()-.5) * e * 10; ty += (Math.random()-.5) * e * 10;
+      o.el.style.transform = `translate(${tx}px,${ty}px) rotate(${rot}deg) scale(${1 + e*.06})`;
+      o.el.style.filter = blur > .3 ? `blur(${blur}px)` : '';
+    }
+    const c = 1.5 + e*12;
+    h1.style.textShadow = `${-c}px 0 rgba(255,30,70,.75), ${c}px 0 rgba(0,220,255,.75)`;
+
+    requestAnimationFrame(frame);
+  }
+
+  /* ---------- GLITCH BURSTS ---------- */
+  function glitch() { h1.classList.remove('glitch'); void h1.offsetWidth; h1.classList.add('glitch'); }
+  (function loop() { glitch(); setTimeout(loop, 2500 + Math.random()*4000); })();
+
+  /* ---------- CURSOR ---------- */
+  const cur = document.getElementById('cur');
+  addEventListener('pointermove', ev => {
+    mouse.x = ev.clientX; mouse.y = ev.clientY;
+    cur.style.transform = `translate(${ev.clientX}px,${ev.clientY}px)`;
+  });
+  document.querySelectorAll('button').forEach(b => {
+    b.addEventListener('pointerenter', () => cur.classList.add('hot'));
+    b.addEventListener('pointerleave', () => cur.classList.remove('hot'));
+  });
+
+  /* ---------- AUDIO ENGINE ---------- */
+  let ac = null, master, verb, analyser = null, wave, muted = false;
+  const BPM = 88, STEP = 60 / BPM / 2;
+  const chords = [
+    [110.00, 164.81, 246.94, 261.63],  // Am(add9)
+    [ 87.31, 130.81, 174.61, 220.00],  // Fmaj7
+    [130.81, 196.00, 246.94, 329.63],  // Cmaj7
+    [ 98.00, 146.83, 196.00, 293.66],  // G
+  ];
+  const scale = [220, 261.63, 293.66, 329.63, 392, 440, 523.25, 587.33, 659.25, 783.99, 880];
+  let pad = [];
+
+  function impulse(sec) {
+    const len = ac.sampleRate * sec, b = ac.createBuffer(2, len, ac.sampleRate);
+    for (let c = 0; c < 2; c++) { const d = b.getChannelData(c); for (let i = 0; i < len; i++) d[i] = (Math.random()*2-1) * Math.pow(1 - i/len, 2.6); }
+    return b;
+  }
+
+  function start() {
+    if (ac) return;
+    ac = new (window.AudioContext || window.webkitAudioContext)();
+    master = ac.createGain(); master.gain.value = 0; master.gain.linearRampToValueAtTime(.8, ac.currentTime + 3);
+    const comp = ac.createDynamicsCompressor();
+    analyser = ac.createAnalyser(); analyser.fftSize = 1024; wave = new Uint8Array(analyser.fftSize);
+    master.connect(comp); comp.connect(analyser); analyser.connect(ac.destination);
+    verb = ac.createConvolver(); verb.buffer = impulse(3.2);
+    const vg = ac.createGain(); vg.gain.value = .55; verb.connect(vg); vg.connect(master);
+
+    // pad
+    const filt = ac.createBiquadFilter(); filt.type = 'lowpass'; filt.frequency.value = 700; filt.Q.value = 4;
+    const lfo = ac.createOscillator(), lg = ac.createGain(); lfo.frequency.value = .07; lg.gain.value = 450;
+    lfo.connect(lg); lg.connect(filt.frequency); lfo.start();
+    const pg = ac.createGain(); pg.gain.value = .045; filt.connect(pg); pg.connect(master); pg.connect(verb);
+    chords[0].forEach(f => [-8, 8].forEach(det => {
+      const o = ac.createOscillator(); o.type = 'sawtooth'; o.frequency.value = f; o.detune.value = det;
+      o.connect(filt); o.start(); pad.push(o);
+    }));
+
+    // sequencer
+    let step = 0, next = ac.currentTime + .15;
+    setInterval(() => {
+      while (next < ac.currentTime + .25) {
+        if (step % 2 === 0) kick(next); else hat(next);
+        if (step % 16 === 12 && Math.random() < .6) hat(next + STEP/2, .06);
+        if (step % 32 === 0) {
+          const ch = chords[(step / 32) % chords.length];
+          pad.forEach((o, i) => o.frequency.setTargetAtTime(ch[i >> 1], next, .6));
+        }
+        next += STEP; step++;
+      }
+    }, 40);
+
+    document.getElementById('snd').textContent = 'On';
+    document.getElementById('bpm').textContent = BPM + ' BPM';
+    document.getElementById('enter').classList.add('gone');
+  }
+
+  function at(time, fn) { setTimeout(fn, Math.max(0, (time - ac.currentTime) * 1000)); }
+
+  function kick(t) {
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.frequency.setValueAtTime(150, t); o.frequency.exponentialRampToValueAtTime(42, t + .13);
+    g.gain.setValueAtTime(.9, t); g.gain.exponentialRampToValueAtTime(.001, t + .5);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t + .52);
+    at(t, () => { energy = 1; });
+  }
+  let noise;
+  function hat(t, vol = .09) {
+    if (!noise) { noise = ac.createBuffer(1, ac.sampleRate * .1, ac.sampleRate); const d = noise.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random()*2-1; }
+    const s = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain();
+    s.buffer = noise; f.type = 'highpass'; f.frequency.value = 7500;
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.001, t + .06);
+    s.connect(f); f.connect(g); g.connect(master); s.start(t);
+  }
+  function note(freq, lightIndex) {
+    start();
+    const t = ac.currentTime, g = ac.createGain();
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.22, t + .01); g.gain.exponentialRampToValueAtTime(.001, t + 2.2);
+    [['triangle', 1], ['sine', 2]].forEach(([type, mult]) => {
+      const o = ac.createOscillator(); o.type = type; o.frequency.value = freq * mult;
+      const og = ac.createGain(); og.gain.value = mult === 1 ? 1 : .25;
+      o.connect(og); og.connect(g); o.start(t); o.stop(t + 2.3);
+    });
+    g.connect(master); g.connect(verb);
+    lights[lightIndex % lights.length].flash = 1; energy = Math.min(1.4, energy + .5);
+    if (Math.random() < .35) glitch();
+  }
+
+  /* ---------- INPUT ---------- */
+  document.getElementById('enter').addEventListener('click', ev => { ev.stopPropagation(); start(); });
+  document.getElementById('mute').addEventListener('click', ev => {
+    ev.stopPropagation();
+    if (!ac) return start();
+    muted = !muted;
+    master.gain.setTargetAtTime(muted ? 0 : .8, ac.currentTime, .1);
+    document.getElementById('snd').textContent = muted ? 'Off' : 'On';
+  });
+  addEventListener('pointerdown', ev => {
+    if (ev.target.closest('button')) return;
+    const i = Math.floor(ev.clientX / innerWidth * scale.length);
+    note(scale[Math.min(scale.length - 1, i)], Math.floor(ev.clientX / innerWidth * 5));
+  });
+  const keys = 'asdfghjkl;qwertyuiop';
+  addEventListener('keydown', ev => {
+    if (ev.repeat) return;
+    const i = keys.indexOf(ev.key.toLowerCase());
+    if (i < 0) return;
+    note(scale[i % scale.length] * (i >= 10 ? 2 : 1), i);
+  });
+
+  /* ---------- GO ---------- */
+  resize();
+  (document.fonts ? document.fonts.ready : Promise.resolve()).then(measure);
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
